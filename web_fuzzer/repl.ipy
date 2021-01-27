@@ -1,0 +1,43 @@
+#!/usr/bin/ipython -i
+# type: ignore
+
+# Handly tool for debugging purposes
+# Launch an interactive session with all modules pre-loaded
+
+from importlib      import import_module
+from bs4            import BeautifulSoup
+from unittest.mock  import Mock
+
+!bash -c "cowsay -d <<< 'webFuzz Repl'" 
+
+def try_import(module: str):
+   try:
+      return import_module(module)
+   except Exception as e:
+      print(module + " cannot be loaded!")
+      print("Trace: ", e)
+      return None
+
+Fuzzer = try_import("webFuzz.fuzzer")
+Worker = try_import("webFuzz.worker")
+Curses = try_import("webFuzz.curses_menu")
+Environment = try_import("webFuzz.environment")
+Node = try_import("webFuzz.node")
+Types = try_import("webFuzz.types")
+Misc = try_import("webFuzz.misc")
+Mutator = try_import("webFuzz.mutator")
+Node_Iterator = try_import("webFuzz.node_iterator")
+Crawler = try_import("webFuzz.crawler")
+Parser = try_import("webFuzz.parser")
+Simple_Menu = try_import("webFuzz.simple_menu")
+
+# a test html file is parsed and loaded for you
+with open("tests/test_html.html", "r") as f:
+   html_soup = BeautifulSoup(f.read(), "html5lib")
+
+args = Mock()
+args.unique_anchors = False
+args.verbose = 3
+
+Node.env.args = args
+

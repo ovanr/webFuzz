@@ -1,0 +1,9 @@
+bug_injection/__pycache__
+*.pyc
+webFuzz/__pycache__/
+webFuzz/server.log
+webFuzz/geckodriver.log
+webFuzz/bmp.log
+log/webFuzz_*.log
+fuzzer.log
+instr.meta
