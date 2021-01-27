@@ -18,15 +18,11 @@ Example run: ```./webFuzz.py -v -v --driver webFuzz/drivers/chromedriver86 -m in
 ## TODO
 *  Manual execution -> MARCOS
 *  Fix the curses interface (arrow keys) -> MARCOS
-*  Implement some kind of nonce field detection (crawler treats identical links with different nonces as unique and falls in infinite loop)
 *  reward mutation functions that succeed in finding bugs
 *  pausing the fuzzer causes the response time timer for a request to keep counting. find a way to fix it
 *  report requests that have long response times (and cpu usage maybe)
 *  write more tests, and simplify them too
-*  implement stored xss detection
 *  it would be a good idea not to completely throw away mutated nodes that didn't make it to the heap 
-*  Implement the following  mutating functions:
-   * remove some parameters from url
 
 ## Authors
 
