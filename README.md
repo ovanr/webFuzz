@@ -33,7 +33,7 @@ Example run: ```./webFuzz.py -v -v --driver webFuzz/drivers/chromedriver86 -m in
 * **Orpheas van Rooij** - *ovan-r01@cs.ucy.ac.cy*
 * **Marcos Antonios Charalambous** - *mchara01@cs.ucy.ac.cy*
 * **Demetris Kaizer** - *dkaize01@cs.ucy.ac.cy*
-* **Michalis Papaevripides - *mpapae04@cs.ucy.ac.cy*
+* **Michalis Papaevripides** - *mpapae04@cs.ucy.ac.cy*
 * **Elias Athanasopoulos** - *eliasathan@cs.ucy.ac.cy*
 
 All authors are members of the University of Cyprus
