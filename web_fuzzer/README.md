@@ -4,7 +4,7 @@ A grey-box fuzzer for web applications
 
 ## Installation
 
-1. Instrument your web application using [php-ast-instrumentation]().
+1. Instrument your web application using [php-ast-instrumentation](https://bitbucket.org/srecgrp/webfuzz_public/src/v1.0.0/instrumentor/).
 2. Make sure your instrumented web application now works fine.
 3. Copy `instr.meta` file from the instrumentation output, to the same directory where file `curses_runner.py` resides.
 4. Install the python dependencies:  ```pip3 install --upgrade -r /hhvm-fuzzing/web_fuzzer/requirements.txt```
