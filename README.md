@@ -4,25 +4,32 @@ A grey-box fuzzer for web applications
 
 ## Installation
 
-1. Instrument your web application using [php-ast-instrumentation](https://bitbucket.org/srecgrp/webfuzz_public/src/v1.0.0/instrumentor/).
+1. Instrument your web application using [php-ast-instrumentor](https://bitbucket.org/srecgrp/webfuzz_public/src/v1.1.0/instrumentor/).
 2. Make sure your instrumented web application now works fine.
 4. Install the python dependencies:  ```pip3 install --upgrade -r web_fuzzer/requirements.txt```
-5. Install cowsay with ```sudo apt-get install -y cowsay```
 
 ## Usage
 
-Run the fuzzer using `./webFuzz.py` in the web_fuzzer directory.
+Run the fuzzer using `webFuzz.py`.
+*Tested on Linux environments with Python version 3.8 and 3.9*
 
-Example run: ```./webFuzz.py -v -v --driver webFuzz/drivers/chromedriver86 -m instr.meta -w 3 -b 'wp-login|action|logout' -s -r simple 'http://localhost/wp-admin/'```
+Example run: 
+```
+./webFuzz.py -vv 
+             --driver webFuzz/drivers/geckodriver 
+             -m ~/MyWebappInstrumented/instr.meta 
+             -w 8 
+             -b 'wp-login|action|logout|' 
+             -b 'settings|||POST 
+             -p -s 
+             -r simple 
+             'http://localhost/wp-admin/index.php'
+```
 
-## TODO
-*  Manual execution -> MARCOS
-*  Fix the curses interface (arrow keys) -> MARCOS
-*  reward mutation functions that succeed in finding bugs
-*  pausing the fuzzer causes the response time timer for a request to keep counting. find a way to fix it
-*  report requests that have long response times (and cpu usage maybe)
-*  write more tests, and simplify them too
-*  it would be a good idea not to completely throw away mutated nodes that didn't make it to the heap 
+## Trophy Case
+
+* OSCommerce CE-Phoenix - 8 Zero day XSS bugs - [GitHub Issue](https://github.com/gburton/CE-Phoenix/issues/1039)
+
 
 ## Authors
 
