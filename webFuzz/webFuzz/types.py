@@ -12,7 +12,7 @@ from datetime     import datetime
 from jsonschema   import validate
 from urllib.parse import ParseResult
 
-VERSION = 1.1
+VERSION = 1.2
 
 Label = int
 Bucket = int
