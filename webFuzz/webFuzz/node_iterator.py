@@ -9,11 +9,11 @@
 import heapq
 
 from typing         import Dict, List, Set, Optional
+import random
 
 from .node          import Node
 from .types         import CFGTuple, HTTPMethod, List, Label, CFG, Policy, get_logger
 from .environment   import env
-
 
 class NodeIterator:
     """
@@ -165,8 +165,9 @@ class NodeIterator:
         if len(self.node_list) == 0:
             logger.error("No more links to follow found.")
             raise StopIteration
-
+        
         node = heapq.heappop(self.node_list)
+        
         node.picked_score += 1
 
         heapq.heappush(self.node_list, node)

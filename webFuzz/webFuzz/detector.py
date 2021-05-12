@@ -77,7 +77,7 @@ class Detector():
                     conf = max(res, conf)
 
         if type(node) == str:
-            if longest_str_match("0xdeadbeef", node) >= 5:
+            if longest_str_match(node, "0xdeadbeef") >= 5:
                 conf = max(XSSConfidence.LOW, conf)
 
         return conf
@@ -89,7 +89,7 @@ class Detector():
             return Detector.js_ast_traversal(script.body)
         except:
             # fallback to weak method
-            if longest_str_match("0xdeadbeef", raw_code) >= 5:
+            if longest_str_match(raw_code, "0xdeadbeef") >= 5:
                 return XSSConfidence.LOW
             
             return XSSConfidence.NONE
@@ -140,14 +140,14 @@ class Detector():
 
     def should_analyze(self, id_: str, url: str, content: str) -> bool:
         if id_ not in self._flagged_elements[XSSConfidence.HIGH].get(url, []) and \
-            longest_str_match("0xdeadbeef", content) >= 5:
+            longest_str_match(content, "0xdeadbeef") >= 5:
             return True
         
         return False
 
     @staticmethod
     def xss_precheck(raw_html: str) -> bool:
-        if longest_str_match("0xdeadbeef", raw_html) >= 5:
+        if longest_str_match(raw_html, "0xdeadbeef") >= 5:
             return True
         return False
 
@@ -157,7 +157,8 @@ class Detector():
         logger = get_logger(__name__)
 
         conf = XSSConfidence.NONE
-            
+        logger.info("Performing XSS detection...")
+        
         for elem in html.find_all():
             if type(elem) != element.Tag:
                 continue

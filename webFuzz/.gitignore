@@ -2,3 +2,5 @@ __pycache__
 **/*.log
 **/*.meta
 seeds/*.json
+tools/*.json
+tools/*.html

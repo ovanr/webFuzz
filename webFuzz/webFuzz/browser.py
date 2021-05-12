@@ -97,14 +97,15 @@ class Browser():
                 except UnexpectedAlertPresentException:
                     pass
                 except WebDriverException:
-                    nodes = self.parse_har_file(start_node, pf.proxy.har)
+                    nodes = Browser.parse_har_file(start_node, pf.proxy.har)
                     break
 
 
         cookies = {c['name']: c['value'] for c in cookies}
         return BrowserResult(nodes, cookies)
 
-    def parse_har_file(self, start_node: Node, har_file: dict) -> Set[Node]:
+    @staticmethod
+    def parse_har_file(start_node: Node, har_file: dict) -> Set[Node]:
         har_parser = HarParser(har_file)
         data = har_parser.har_data['entries']
 

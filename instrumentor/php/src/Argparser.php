@@ -25,7 +25,7 @@ class Argparser {
 
    public function usage():void {
       echo "Usage: $this->programName [--help] | [--verbose] [--method STR] [--policy STR] --dir STR 
-PHP Code Instrumentator
+PHP Code Instrumentor
 
 Required arguments:
    --dir                The src directory to instrument

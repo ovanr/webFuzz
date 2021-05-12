@@ -12,6 +12,7 @@ from datetime     import datetime
 from jsonschema   import validate
 from urllib.parse import ParseResult
 
+VERSION = 1.1
 
 Label = int
 Bucket = int
@@ -39,8 +40,15 @@ class RequestStatus(ExtendedEnum):
     SUCCESS_NOT_INTERESTING = 1
     SUCCESS_FOUND_PHRASE = 2
     UNSUCCESSFUL_REQUEST = 3
-    INVALID_RESPONSE = 4
-    UNIMPLEMENTED_METHOD = 5
+
+class InvalidContentType(Exception):
+    pass
+
+class InvalidHttpCode(Exception):
+    pass
+
+class UnimplementedHttpMethod(Exception):
+    pass
 
 class ExitCode(ExtendedEnum):
     NONE = 0
@@ -106,6 +114,9 @@ class Arguments(Tap):
     ignore_4xx: bool = False
     """Do not fuzz links that return 4xx code"""
 
+    http_error_at_info: bool = False
+    """Log Http errors at info level (Default is at Warning)"""
+    
     meta_file: str = "./instr.meta"
     "Specify the location of instrumentation meta file (instr.meta)"
 
@@ -115,16 +126,13 @@ class Arguments(Tap):
     worker: int = 1
     """Specify the number of workers to spawn that will concurrently send requests"""
 
-    unique_anchors: bool = False
-    """Treat urls with different anchors as different urls"""
+    uniq_frag: bool = False
+    """Treat urls with different fragments as different urls"""
 
-    driver_file: str = "./drivers/geckodriver"
+    driver_file: str = "webFuzz/drivers/geckodriver"
     """Specify the location of the web driver (used in -s flag)"""
 
-    timeout: int = 0
-    """Set fuzzing session timeout value in seconds (0 indicates no timeout)"""
-
-    request_timeout: int = 150
+    request_timeout: int = 100
     """Set the per request timeout in seconds"""
 
     run_mode: RunMode = RunMode.SIMPLE
@@ -134,9 +142,10 @@ class Arguments(Tap):
     'Specify the inital URL to start fuzzing from'
 
 
-    def __init__(self, version, *args, **kwargs):
-        self.version = version
-        super().__init__()
+    def __init__(self):
+        super().__init__(description='webFuzz is a grey-box fuzzer for web applications.', 
+                         usage='%(prog)s [options] -r/--run <mode> <URL>',
+                         add_help=True)
 
     @staticmethod
     def parse_single_block_opt(value: str) -> BlockRule:
@@ -155,12 +164,11 @@ class Arguments(Tap):
         self.add_argument('-m', '--meta_file')
         self.add_argument('-b', '--block', type=Arguments.parse_single_block_opt, action='append')
         self.add_argument('-w', '--worker')
-        self.add_argument('-t', '--timeout')
         self.add_argument('-r', '--run_mode', type=RunMode)
         self.add_argument('URL')
 
         self.add_argument('--version', help="Prints webFuzz latest version", action='version',
-                          version='webFuzz v{VERSION}'.format(VERSION=self.version))
+                          version='webFuzz v{VERSION}'.format(VERSION=VERSION))
 
 
 # Instrumentation Arguments

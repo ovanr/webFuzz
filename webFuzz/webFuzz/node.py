@@ -17,20 +17,20 @@ from .types           import OutputMethod, Params, Policy, XSSConfidence, UrlTyp
 # post (and maybe get) parameters can get pretty huge. for instance when sending a file
 # via post. Or sometimes a parameter can get reescaped in every request/response cycle
 # making it grow infinitely long. This value crops all parameters to this max size in characters.
-MAX_PARAMETER_SIZE = 1000
+MAX_PARAMETER_SIZE = 200
 
 # for calculating the node rank
-COVER_SCORE_RWEIGHT   =  0.40
-MUTATED_SCORE_RWEIGHT =  0.10
-SINK_SCORE_RWEIGHT    =  0.20
-EXEC_TIME_RWEIGHT     = -0.30
-NODE_SIZE_RWEIGHT     = -0.10
-PICKED_SCORE_RWEIGHT  = -0.40
+COVER_SCORE_RWEIGHT   =  0.25
+MUTATED_SCORE_RWEIGHT =  0.25
+SINK_SCORE_RWEIGHT    =  0.25
+EXEC_TIME_RWEIGHT     = -0.00
+NODE_SIZE_RWEIGHT     = -0.00
+PICKED_SCORE_RWEIGHT  = -0.60
 
 # for calculating the lightest node
 EXEC_TIME_LWEIGHT = -0.60
 NODE_SIZE_LWEIGHT = -0.30
-UNCERTAINTY_THRESH = 0.1
+UNCERTAINTY_THRESH = 0.10
 
 class Node:
     def __init__(self,
@@ -137,8 +137,9 @@ class Node:
         # trim all parameters to a maximum allowed length
         for (_, params) in self._params.items():
             for key in params:
-                if len(params[key]) > MAX_PARAMETER_SIZE:
-                    params[key] = params[key][:MAX_PARAMETER_SIZE]
+                length = len(params[key])
+                if length > MAX_PARAMETER_SIZE:
+                    params[key] = params[key][length - MAX_PARAMETER_SIZE:]
 
         # force recalculation of the following
         # attr since they depend on params
@@ -306,7 +307,14 @@ class Node:
             It is made from the immutable (not enforced) parts of the node.
         """
         if not hasattr(self, '_hash'):
-            self._hash = hash((self.url, self.method, object_to_tuple(self.params)))
+            if env.args.uniq_frag:
+                url = self.url
+            else:
+                # remove fragment
+                url = urlparse(self.url)._replace(fragment='')
+                url = urlunparse(url)
+
+            self._hash = hash((url, self.method, object_to_tuple(self.params)))
 
         return self._hash
 

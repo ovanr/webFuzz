@@ -8,7 +8,7 @@ from .types     import HTTPMethod, BlockRule, List
 from .misc      import get_logger
 from .node      import Node
 
-CRAWLER_PER_BASE_LIMIT = 200
+CRAWLER_PER_BASE_LIMIT = 2000
 
 Hash = int
 Url = str
@@ -24,16 +24,17 @@ class Crawler:
 
         if init_seed:
             self._crawler_unseen.update(init_seed)
-
-            if len(self._crawler_unseen) > 1:
-                Crawler.store_init_seed(init_seed)
+            Crawler.store_init_seed(init_seed)
 
         if seed_file:
             self._crawler_unseen.update(Crawler.parse_init_seed(seed_file))
 
         self._block_rules = block_rules
         self._crawler_seen_full: Set[Hash] = set()
-        self._crawler_seen_base: BaseURLCounter  = { HTTPMethod.GET: {}, HTTPMethod.POST: {} }
+        self._crawler_seen_base: BaseURLCounter = { 
+            HTTPMethod.GET: {}, 
+            HTTPMethod.POST: {} 
+        }
 
     @staticmethod
     def parse_init_seed(filename:str) -> Set[Node]:
@@ -52,6 +53,7 @@ class Crawler:
             }
             nodes.add(Node(entry["url"], method, params))
     
+        logger.info("Seed file number of entries %d", len(nodes))
         logger.debug("Read seed file as %s", nodes)
 
         return nodes
@@ -62,7 +64,10 @@ class Crawler:
         entries = []
 
         dt = datetime.now()
-        filename = f"./seeds/webFuzz_seed_{dt.day}-{dt.month}_{dt.hour}:{dt.minute}.json"
+        filename = f"./seeds/webFuzz_seed" + \
+                   f"_{dt.day}-{dt.month}" + \
+                   f"_{dt.hour}:{dt.minute}.json"
+
         logger.info("Writing seed to %s", filename)
 
         for node in seed:
@@ -77,12 +82,11 @@ class Crawler:
             entries.append(entry)
 
         with open(filename, "w+") as f:
-            f.write(json.dumps(entries, indent=3))
+            json.dump(entries, f, indent=3)
 
     @property
     def pending_requests(self) -> int:
         return len(self._crawler_unseen)
-
 
     @staticmethod
     def _is_match(rule: BlockRule, node: Node) -> bool:
@@ -150,7 +154,12 @@ class Crawler:
         # TODO: there must be a cleaner way to do this
         hash_of_links = set(map(lambda link: link.__hash__(), links))
         uniq_hashes = hash_of_links - self._crawler_seen_full
-        uniq_links:Set[Node] = set(filter(lambda link: link.__hash__() in uniq_hashes, links))
+        uniq_links:Set[Node] = set(
+            filter(
+                lambda link: link.__hash__() in uniq_hashes, 
+                links
+            )
+        )
 
         self._crawler_unseen = self._crawler_unseen | uniq_links
 

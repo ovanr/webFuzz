@@ -1,10 +1,3 @@
-"""
-    Implementation of a fuzzing tool that will provide invalid, unexpected, malicious
-    or random data as inputs to a computer program. The program is then
-    monitored for exceptions such as rxss, sqli injections, crashes, 
-    failing built-in code assertions, long execution times and potential memory leaks.
-"""
-
 import aiohttp
 import asyncio
 import curses
@@ -14,17 +7,18 @@ import logging
 import random
 import signal
 
-from typing         import List
+from typing         import ContextManager, List, AsyncIterator, Dict
 from aiohttp.client import ClientSession, TraceConfig
 from urllib.parse   import urlparse
+from contextlib     import asynccontextmanager
 
 # User defined modules
 from .worker        import Worker
-from .curses_menu   import Curses_menu
+#from .curses_menu   import Curses_menu
 from .environment   import env
 from .node          import Node
-from .types         import Arguments, FuzzerLogger, InstrumentArgs, OutputMethod, get_logger, HTTPMethod, Statistics, ExitCode
-from .misc          import retrieve_headers, sigalarm_handler, sigint_handler
+from .types         import Arguments, FuzzerLogger, InstrumentArgs, OutputMethod, get_logger, HTTPMethod, Statistics, ExitCode, RunMode
+from .misc          import retrieve_headers, sigalarm_handler, sigint_handler, rtt_trace_config
 from .mutator       import Mutator
 from .node_iterator import NodeIterator
 from .crawler       import Crawler
@@ -45,8 +39,6 @@ class Fuzzer:
         logger = get_logger(__name__)
         logger.debug(args)
 
-        self.timeout = args.timeout
-
         self.worker_count = args.worker
 
         meta = json.loads(open(args.meta_file).read())
@@ -63,7 +55,7 @@ class Fuzzer:
         initial_seed = set([start_node])
             
         cookies = {}
-        if args.proxy or args.session:
+        if args.proxy:
             b = Browser(args.driver_file, proxy_port=args.proxy_port)
             result = b.run_browser(start_node)
 
@@ -71,11 +63,12 @@ class Fuzzer:
                 cookies = result.cookies
             if args.proxy:
                 initial_seed.update(result.nodes)
-
+        
+        self.http_cookies = cookies
         logger.debug("Initial Seed: %s", initial_seed)
 
         headers = retrieve_headers()
-        self._session_data = {"cookies": cookies, "headers": headers}
+        self.http_headers = headers
 
         self._crawler = Crawler(block_rules=args.block,
                                 init_seed=initial_seed,
@@ -91,149 +84,104 @@ class Fuzzer:
 
         self.stats = Statistics(start_node)
 
-
-    @staticmethod
-    def create_trace_configs() -> List[TraceConfig]:
-
-        async def on_request_start(session: ClientSession,
-                                   trace_config_ctx,
-                                   params: aiohttp.TraceRequestStartParams) -> None:
-                            
-            trace_config_ctx.start = asyncio.get_event_loop().time()
-
-        async def on_request_end(session: ClientSession,
-                                 trace_config_ctx,
-                                 params: aiohttp.TraceRequestEndParams) -> None:
-                                 
-            elapsed_time = asyncio.get_event_loop().time() - trace_config_ctx.start
-            trace_config_ctx.trace_request_ctx.exec_time = elapsed_time
-
-        exec_time_config = TraceConfig()
-        exec_time_config.on_request_start.append(on_request_start)
-        exec_time_config.on_request_end.append(on_request_end)
-
-        return [exec_time_config]
-
-    async def create_workers(self):
-        for count in range(self.worker_count):
-            worker_id = str(random.randrange(10000, 1000000))
-            worker = Worker(worker_id,
-                            self._session,
-                            self._crawler,
-                            self._mutator,
-                            self._parser,
-                            self._detector,
-                            self._node_iterator,
-                            self._session_node,
-                            self.stats)
-
-            self.workers.append(worker)
-            worker.asyncio_task = asyncio.create_task(worker.run_worker())
-
-            if count == 0:
-                # if it is the first worker spawned
-                # wait until at least one request/response cycle is done
-                # this is needed because workers that find an empty queue exit
-                await asyncio.sleep(8)
-
-            if env.shutdown_signal != ExitCode.NONE:
-                break
-    
-    async def exit_session(self):
+    @asynccontextmanager
+    async def http_session(cookies: Dict[str, str],
+                           headers: Dict[str, str],
+                           conn_count: int) -> AsyncIterator[ClientSession]:
         logger = get_logger(__name__)
-
-        await self._session.close()
-
-        logger.warning('Shutting Down Initiated.')
-
-        logging.shutdown()
-
-    async def fuzzer_loop(self) -> ExitCode:
-        logger = get_logger(__name__)
+        logger.info("New session to be created")
 
         # timeout per link in seconds
         timeout = aiohttp.ClientTimeout(total=env.args.request_timeout) # type: ignore
-        trace_configs = Fuzzer.create_trace_configs()
+        trace_configs = [rtt_trace_config()]
 
-        conn = aiohttp.TCPConnector(limit=self.worker_count, limit_per_host=self.worker_count)
+        conn = aiohttp.TCPConnector(limit=conn_count, limit_per_host=conn_count)
 
-        self._session = aiohttp.ClientSession(cookies=self._session_data["cookies"],
-                                              headers=self._session_data["headers"],
-                                              connector=conn,
-                                              timeout=timeout,
-                                              trace_configs=trace_configs)
-
-        signal.alarm(self.timeout)
-
-        logger.info("Spawning %d workers", self.worker_count)
-
-        self.workers = []
-
-        await self.create_workers()
-
+        async with aiohttp.ClientSession(cookies=cookies,
+                                         headers=headers,
+                                         connector=conn,
+                                         timeout=timeout,
+                                         trace_configs=trace_configs) as s:
+            yield s
+    
+    async def fuzzer_loop(self) -> ExitCode:
+        logger = get_logger(__name__)
         exit_code = ExitCode.NONE
-        
-        # wait for them to finish
-        for worker in self.workers:
-            exit_code: ExitCode = await worker.asyncio_task
 
-        if exit_code == exit_code.LOGGED_OUT and env.args.session:
+        if env.args.session and not self.http_cookies:
             b = Browser(env.args.driver_file, proxy_port=env.args.proxy_port)
             result = b.run_browser(self._session_node)
-            logger.info("New session to be created")
-            self._session_data["cookies"] = result.cookies
-            await self._session.close()
-            return await self.fuzzer_loop()
-        else:
-            env.shutdown_signal = exit_code
-            await self.exit_session()
-            return env.shutdown_signal
 
-    @staticmethod
-    def register_signal_handlers() -> None:        
-        loop = asyncio.get_running_loop()
-        loop.add_signal_handler(signal.SIGINT, sigint_handler)
-        loop.add_signal_handler(signal.SIGALRM, sigalarm_handler)
+            self.http_cookies = result.cookies
+
+        async with Fuzzer.http_session(self.http_cookies, 
+                                       self.http_headers, 
+                                       self.worker_count) as s:
+
+            logger.info("Spawning %d workers", self.worker_count)
+
+            workers: List[asyncio.Task] = []
+            for count in range(self.worker_count):
+                worker_id = str(random.randrange(10000, 1000000))
+                worker = Worker(worker_id,
+                                s,
+                                self._crawler,
+                                self._mutator,
+                                self._parser,
+                                self._detector,
+                                self._node_iterator,
+                                self._session_node,
+                                self.stats)
+
+                workers.append(worker.async_run())
+
+                if count == 0:
+                    # if it is the first worker spawned
+                    # wait until at least one request/response cycle is done
+                    # this is needed because workers that find an empty queue exit
+                    await asyncio.sleep(8)
+
+                if env.shutdown_signal != ExitCode.NONE:
+                    break
+        
+            # wait for them to finish
+            for worker in workers:
+                exit_code: ExitCode = await worker
+        
+        if exit_code == exit_code.LOGGED_OUT and env.args.session:
+            self.http_cookies = {}
+            return await self.fuzzer_loop()
+        
+        env.shutdown_signal = exit_code
+        logger.warning('Shutting Down...')
+        logging.shutdown()
+
+        return env.shutdown_signal
 
     """
         Starting point for the Fuzzer execution with simple print interface. Here you can specify
         async tasks to run *concurrently* and register async safe Signal Handlers
     """
-    async def run_simple(self, printToFile: bool) -> ExitCode:
-        self.register_signal_handlers()
-        fuzzer = self
+    async def async_run(self, interface) -> ExitCode:
+        loop = asyncio.get_running_loop()
+        loop.add_signal_handler(signal.SIGINT, sigint_handler)
+        loop.add_signal_handler(signal.SIGALRM, sigalarm_handler)
 
-        if printToFile:
-            f = open("/tmp/fuzzer_stats", "w+")
-        
-            def printer(line):
-                f.write(line + "\n")
-            def refresh():
-                f.truncate(0)
-                f.seek(0)
-
-            sm = Simple_menu(fuzzer, printer, refresh, f.flush)
-        else:   
-            sm = Simple_menu(fuzzer)
-
-        print_stats_task = asyncio.create_task(sm.print_stats())
+        interface_task = asyncio.create_task(interface.run(self))
         fuzzer_loop_task = asyncio.create_task(self.fuzzer_loop())
 
-        await print_stats_task
         exit_code = await fuzzer_loop_task
+        await interface_task
 
         return exit_code
 
-    """
-        Starting point for the Fuzzer execution with curses interface. Here you can specify
-        async tasks to run *concurrently* and register async safe Signal Handlers
-    """
-    async def run_curses(self) -> None:
-        self.register_signal_handlers()
-        fuzzer = self
-
-        # TODO: UPDATE ME
-
-        cm = Curses_menu(fuzzer)
-        interface = asyncio.create_task(curses.wrapper(cm.draw_menu))
-        await interface
+    def run(self) -> ExitCode:
+        if env.args.run_mode == RunMode.SIMPLE:
+            interface = Simple_menu(print_to_file=False)
+        elif env.args.run_mode == RunMode.FILE:
+            interface = Simple_menu(print_to_file=True)
+        else:
+            raise Exception("Curses interface not available")
+            #interface = Curses_menu()
+        
+        return asyncio.run(self.async_run(interface))

@@ -3,14 +3,15 @@ import logging
 
 from aiohttp      import ClientSession,ClientResponse
 from bs4          import BeautifulSoup
-from typing       import Union, Optional, Dict, Iterator
+from typing       import Generator, Union, Optional, Dict, Iterator, AsyncIterator
 from itertools    import repeat
+from contextlib   import asynccontextmanager
 
 # User defined modules
 from .environment   import env
 from .node          import Node
-from .types         import FuzzerLogger, get_logger, HTTPMethod, RequestStatus, Statistics, ExitCode
-from .misc          import iter_join
+from .types         import FuzzerLogger, get_logger, HTTPMethod, RequestStatus, Statistics, ExitCode, UnimplementedHttpMethod, InvalidContentType, InvalidHttpCode, XSSConfidence
+from .misc          import iter_join, lazyFunc
 from .mutator       import Mutator
 from .node_iterator import NodeIterator
 from .crawler       import Crawler
@@ -45,15 +46,15 @@ class Worker():
         self._stats = statistics
 
     @property
-    def asyncio_task(self) -> Union[asyncio.Task, None]:
+    def asyncio_task(self) -> Optional[asyncio.Task]:
         if hasattr(self, "_task"):
             return self._task
         else:
             return None
 
-    @asyncio_task.setter
-    def asyncio_task(self, task: asyncio.Task):
-        self._task = task
+    def async_run(self):
+        self._task = asyncio.create_task(self.run_worker())
+        return self._task
 
     def update_stats(self, current_node: Node):
         self._stats.total_cover_score = self._node_iterator.total_cover_score
@@ -71,91 +72,80 @@ class Worker():
 
         return False
 
-    async def process_response(self, response: ClientResponse, node: Node) -> RequestStatus:
-        logger = get_logger(__name__, self.id)
-
-        try:
-            # req.text() can throw UnicodeDecodeError
-            # in non utf-8 encoded html documents
-            raw_html: str = await response.text()
-        except UnicodeDecodeError:
-            return RequestStatus.UNSUCCESSFUL_REQUEST
-        
-        if node.label == 'session_check':
-            # special node to check if we are logged in
-            if Worker.has_catchphrase(raw_html, env.args.catch_phrase):
-                logger.info("Success, we are still logged in")
-                return RequestStatus.SUCCESS_FOUND_PHRASE
-
-        soup = None
-
-        if self._detector.xss_precheck(raw_html):
-            # html5lib parser is the most identical method to how browsers parse HTMLs
-            soup: BeautifulSoup = BeautifulSoup(raw_html, "html5lib")
-            self._detector.xss_scanner(node, soup)
-
-        cfg = node.parse_instrumentation(response.headers, self.id)
-            
-        if not self._node_iterator.add(node, cfg):
-            logger.info("Not interesting")
-            return RequestStatus.SUCCESS_NOT_INTERESTING
-
-        if soup is None:
-            soup: BeautifulSoup = BeautifulSoup(raw_html, "html5lib")
-
-        links = self._parser.parse(node, soup)
-        self._crawler += links
-
-        return RequestStatus.SUCCESS_INTERESTING
-
-
-    async def handle_request(self, new_request: Node) -> RequestStatus:
+    @asynccontextmanager
+    async def http_send(self, new_request: Node) -> AsyncIterator[ClientResponse]:
         logger = get_logger(__name__, self.id)
 
         if new_request.method == HTTPMethod.GET:
-            send_request = self._session.get
+            aiohttp_send = self._session.get
         elif new_request.method == HTTPMethod.POST:
-            send_request = self._session.post
+            aiohttp_send = self._session.post
         else:
             logger.error("Unimplemented HTTP method")
-            return RequestStatus.UNIMPLEMENTED_METHOD
+            raise UnimplementedHttpMethod(new_request.method)
 
         logger.info("sending request: %s", new_request.url)
 
-        async with send_request(new_request.url,
+        async with aiohttp_send(new_request.url,
                                 headers={ 'REQ-ID' : self.id},
                                 params=new_request.params[HTTPMethod.GET],
                                 data=new_request.params[HTTPMethod.POST],
                                 trace_request_ctx=new_request) as r:
 
             self._stats.total_requests += 1
-            exit_early = False
 
-            if logger.getEffectiveLevel() == logging.DEBUG:
-                # needed since response body is loaded strictly
-                logger.debug("Dumping html %s: ", await r.text())
+            if r.content_type and r.content_type.lower() != 'text/html':
+                raise InvalidContentType(r.content_type)
 
             if r.status >= 400:
-                logger.warning('Got code %d from %s', r.status, r.url)
+                logger.info('Got code %d from %s', r.status, r.url)
 
-                if env.args.ignore_404 and r.status == 404: exit_early = True
-                if env.args.ignore_4xx: exit_early = True
+                if env.args.ignore_404 and r.status == 404:
+                    raise InvalidHttpCode(404)
 
-            if r.content_type and r.content_type != 'text/html':
-                logger.info('Got non html payload: %s', r.content_type)
-                exit_early = True
+                if env.args.ignore_4xx:
+                    raise InvalidHttpCode(r.status)
 
-            if exit_early:
-                logger.info('destroying request..')
-                return RequestStatus.INVALID_RESPONSE
+            yield r
 
-            status = await self.process_response(r, new_request)
-            logger.info("Request Completed: %s", new_request)
+    async def process_req(self, request: Node) -> RequestStatus:
+        logger = get_logger(__name__, self.id)
 
-            self.update_stats(new_request)
+        async with self.http_send(request) as r:
+            raw_html: str = await r.text()
+
+            logger.debug(raw_html)
+
+            if request.label == 'session_check':
+                # special node to check if we are logged in
+                if Worker.has_catchphrase(raw_html, env.args.catch_phrase):
+                    logger.info("Success, we are still logged in")
+                    return RequestStatus.SUCCESS_FOUND_PHRASE
+
+            # html5lib parser is the most identical method to how browsers parse HTMLs
+            soup = lazyFunc(BeautifulSoup, raw_html, "html5lib")
+
+            if self._detector.xss_precheck(raw_html):
+                self._detector.xss_scanner(request, next(soup))
+
+            cfg = request.parse_instrumentation(r.headers, self.id)
+
+            status = RequestStatus.SUCCESS_NOT_INTERESTING
             
-            return status
+            self._node_iterator.add(request, cfg)
+            links = self._parser.parse(request, next(soup))
+            self._crawler += links
 
+            status = RequestStatus.SUCCESS_INTERESTING
+
+            self.update_stats(request)
+
+            logger.info("Request Completed: %s", request)
+            if (request._xss_confidence > XSSConfidence['NONE']):
+                logger.warning("Suspicious request %s", request)
+
+            return status
+    
     async def run_worker(self) -> ExitCode:
         logger = get_logger(__name__, self.id)
         logger.info("Worker reporting Active")
@@ -181,11 +171,15 @@ class Worker():
                 logger.info("Chosen a mutated node")
 
             try:
-                return_code = await self.handle_request(new_request)
+                return_code = await self.process_req(new_request)
             except Exception as e:
-                logger.error(e, exc_info=True)
-                return_code = RequestStatus.UNSUCCESSFUL_REQUEST
+                if env.args.http_error_at_info:
+                    logger.info(e, exc_info=False)
+                else:
+                    logger.warning(e, exc_info=False)
 
+                return_code = RequestStatus.UNSUCCESSFUL_REQUEST
+            
             if src == periodic and \
                 return_code != RequestStatus.SUCCESS_FOUND_PHRASE:
                 logger.warning("Fuzzer has been logged out...")
@@ -195,5 +189,5 @@ class Worker():
             if env.shutdown_signal != ExitCode.NONE:
                 return env.shutdown_signal
 
-        logger.error("Aborting due to lack of paths")
+        logger.error("Aborting due to lack of fuzz targets")
         return ExitCode.EMPTY_QUEUE

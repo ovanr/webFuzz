@@ -11,6 +11,7 @@ from .environment   import env
 def clear(): 
     return system('clear')
 
+
 """
     A simple front-end interface for displaying fuzzer statistics
 """
@@ -18,73 +19,76 @@ class Simple_menu:
 
     """
         Initialization point
-
-        :param fuzzer_object: the actual instance of Fuzzer Class
-        :type Fuzzer: Fuzzer Object
     """
     def __init__(self, 
-                 fuzzer_object, # actual type: Fuzzer (error due to cyclic import)
-                 output_func: Callable = print, 
-                 refresh_func: Callable = clear, 
-                 flush_func: Callable = sys.stdout.flush):
+                 print_to_file: bool):
 
-        self.fuzzer = fuzzer_object
-        self.printer = output_func
-        self.printer_refresh = refresh_func
-        self.printer_flush = flush_func
+        if print_to_file:
+            f = open("/tmp/fuzzer_stats", "w+")
+
+            def fwrite(line):
+                f.write(line + "\n")
+            def frefresh():
+                f.truncate(0)
+                f.seek(0)
+
+            self.printer = fwrite
+            self.printer_refresh = frefresh
+            self.printer_flush = f.flush
+        else:
+            self.printer = print
+            self.printer_refresh = clear
+            self.printer_flush = sys.stdout.flush
 
     """
-        Run interface. Function doesn't return
+        Run interface
     """
-    async def print_stats(self) -> None:
+    async def run(self, fuzzer) -> None:
         logger = get_logger(__name__)
 
+        start_time = time.clock_gettime(time.CLOCK_MONOTONIC)
+
+        past_time = start_time
         past_count = 0
         throughput = 0
-        past_time = time.clock_gettime(time.CLOCK_MONOTONIC)
-        start_time = past_time
 
-        while True:
-            await asyncio.sleep(0.2)
+        while env.shutdown_signal == ExitCode.NONE:
+
+            await asyncio.sleep(0.5)
 
             self.printer_refresh()
             
             current_time = time.clock_gettime(time.CLOCK_MONOTONIC)
 
             if (current_time - past_time > 2):
-                throughput = (self.fuzzer.stats.total_requests - past_count) / \
+                throughput = (fuzzer.stats.total_requests - past_count) / \
                              (current_time - past_time)
 
-                past_count = self.fuzzer.stats.total_requests
+                past_count = fuzzer.stats.total_requests
                 past_time = current_time
 
+                logger.info("Total Cov: %0.4f, Throughput: %0.2f", \
+                            fuzzer.stats.total_cover_score, throughput)
 
             self.printer("webFuzz\n-----\n")
             self.printer("Stats\n")
 
             self.printer('Runtime: {:0.2f} min'.format((current_time - start_time) / 60))
-            self.printer('Total Requests: {:d}'.format(self.fuzzer.stats.total_requests))
+            self.printer('Total Requests: {:d}'.format(fuzzer.stats.total_requests))
             self.printer('Throughput: {:0.2f} requests/s'.format(throughput))
-            self.printer('Crawler Pending URLs: {:d}'.format(self.fuzzer.stats.crawler_pending_urls))
-            self.printer('Current Coverage Score: {:0.4f}%'.format(self.fuzzer.stats.current_node.cover_score))
-            self.printer('Total Coverage Score: {:0.4f}%'.format(self.fuzzer.stats.total_cover_score))
-            self.printer('Possible XSS: {:d}'.format(self.fuzzer.stats.total_xss))
+            self.printer('Crawler Pending URLs: {:d}'.format(fuzzer.stats.crawler_pending_urls))
+            self.printer('Current Coverage Score: {:0.4f}%'.format(fuzzer.stats.current_node.cover_score))
+            self.printer('Total Coverage Score: {:0.4f}%'.format(fuzzer.stats.total_cover_score))
+            self.printer('Possible XSS: {:d}'.format(fuzzer.stats.total_xss))
 
+            self.printer('Executing link: {:s}'.format(fuzzer.stats.current_node.url[:105]))
+            self.printer('Response time: {:0.2f} sec'.format(fuzzer.stats.current_node.exec_time))
 
-            self.printer('Executing link: {:s}'.format(self.fuzzer.stats.current_node.url[:105]))
-            self.printer('Response time: {:0.2f} sec'.format(self.fuzzer.stats.current_node.exec_time))
-
-            if self.fuzzer.stats.current_node.is_mutated:
+            if fuzzer.stats.current_node.is_mutated:
                 self.printer('State: Fuzzing')
             else:
                 self.printer('State: Crawling')
 
-            if current_time - past_time > 1:
-                logger.info("Total Cov: %0.4f, Throughput: %0.2f", \
-                            self.fuzzer.stats.total_cover_score, throughput)
-
             self.printer_flush()
 
-            if env.shutdown_signal != ExitCode.NONE:
-                print("Exit Initiated. Please wait, this may take a few seconds...")
-                return
+        print("Shut Down Initiated. Please wait, this may take a few seconds...")

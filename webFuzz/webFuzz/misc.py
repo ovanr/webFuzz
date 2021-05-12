@@ -1,11 +1,16 @@
 import logging
 
-from typing           import Iterator, Any, Dict, List, Tuple
+import asyncio
+import aiohttp
+
+from typing           import Callable, Iterator, Any, Dict, List, Tuple
 from difflib          import SequenceMatcher
 from urllib.parse     import parse_qs
 from math             import log2, ceil
+from aiohttp.client   import ClientSession, TraceConfig
 from aiohttp.typedefs import CIMultiDictProxy
 from os               import path, access, R_OK
+from functools        import partial
 
 from .types           import get_logger, ExitCode, Numeric, Label, Bucket
 from .environment     import env
@@ -93,8 +98,10 @@ def sigalarm_handler(*args: Any, **kwargs: Any) -> None:
     logger.warning('Reached timeout, stopping fuzzing process')
     env.shutdown_signal = ExitCode.TIMEOUT
 
-def longest_str_match(str1: str, str2: str) -> int:
-    (_,__,size) = SequenceMatcher(None, str1, str2).find_longest_match(0, len(str1), 0, len(str2))
+def longest_str_match(haystack: str, needle: str) -> int:
+    match = SequenceMatcher(None, haystack, needle)
+    (_,__,size) = match.find_longest_match(0, len(haystack), 0, len(needle))
+    
     return size
 
 
@@ -126,3 +133,29 @@ def parse_file(filename: str) -> Iterator[Tuple[Label, str]]:
 
             label, _, value = line.partition('-')
             yield (int(label), value)
+
+def lazyFunc(f: Callable, *args) -> Iterator:
+    r = partial(f, *args)()
+    while True:
+        yield r
+
+def rtt_trace_config() -> TraceConfig:
+    async def on_request_start(session: ClientSession,
+                               trace_config_ctx,
+                               params: aiohttp.TraceRequestStartParams) -> None:
+                        
+        trace_config_ctx.start = asyncio.get_event_loop().time()
+
+    async def on_request_end(session: ClientSession,
+                             trace_config_ctx,
+                             params: aiohttp.TraceRequestEndParams) -> None:
+                             
+        elapsed_time = asyncio.get_event_loop().time() - trace_config_ctx.start
+        trace_config_ctx.trace_request_ctx.exec_time = elapsed_time
+
+    exec_time_config = TraceConfig()
+    exec_time_config.on_request_start.append(on_request_start)
+    exec_time_config.on_request_end.append(on_request_end)
+
+    return exec_time_config
+

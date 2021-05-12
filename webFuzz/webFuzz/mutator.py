@@ -14,11 +14,15 @@ from .types         import HTTPMethod, Params, get_logger
 
 # Weights that govern how often a mutation
 # function is called. These should sum to 100
-FREQ_XSS_PAYLOAD = 30
-FREQ_TYPE_ALTER = 0
-FREQ_RAND_TEXT = 50
-FREQ_SYNTAX_TOKEN = 10
-FREQ_SKIP_PARAM = 10
+FREQ_STRXSS_PAYLOAD  = 0
+FREQ_XSS_PAYLOAD     = 20
+FREQ_TYPE_ALTER      = 5
+FREQ_RAND_TEXT       = 35
+FREQ_SYNTAX_TOKEN    = 20
+FREQ_SKIP_PARAM      = 20 
+
+# Smaller values indicate higher frequency
+FREQ_CLEAR_PARAM     = 5 
 
 # these should remain as is
 HEADS = 1
@@ -98,11 +102,12 @@ class Mutator:
 
         # register mutating functions
         self.per_param_mutators = MutateFunctions(funcs=[
-            MutateFunc(1, FREQ_XSS_PAYLOAD, self.add_xss_payload),
-            MutateFunc(2, FREQ_TYPE_ALTER, self.alter_type),
-            MutateFunc(3, FREQ_RAND_TEXT, self.add_random_text),
-            MutateFunc(4, FREQ_SYNTAX_TOKEN, self.add_syntax_token),
-            MutateFunc(5, FREQ_SKIP_PARAM, self.skip_param)
+            MutateFunc(1, FREQ_STRXSS_PAYLOAD, self.add_strxss_payload),
+            MutateFunc(2, FREQ_XSS_PAYLOAD, self.add_xss_payload),
+            MutateFunc(3, FREQ_TYPE_ALTER, self.alter_type),
+            MutateFunc(4, FREQ_RAND_TEXT, self.add_random_text),
+            MutateFunc(5, FREQ_SYNTAX_TOKEN, self.add_syntax_token),
+            MutateFunc(6, FREQ_SKIP_PARAM, self.skip_param)
         ])
 
     def mutate(self, from_node: Node, node_list: List[Node]) -> Node:
@@ -111,10 +116,6 @@ class Mutator:
         """
         logger = get_logger(__name__)
         logger.debug("Start node: %s", from_node)
-        
-        new_node = Node(url=from_node.url,
-                        method=from_node.method,
-                        parent_request=from_node)
 
         if from_node.size == 0:
             # does not have any parameters
@@ -126,7 +127,10 @@ class Mutator:
 
             new_params = choice(from_node, node_list)
 
-        new_node.params = new_params
+        new_node = Node(url=from_node.url,
+                        method=from_node.method,
+                        params=new_params,
+                        parent_request=from_node)
 
         logger.debug("Mutated node: %s", new_node)
         return new_node
@@ -141,6 +145,9 @@ class Mutator:
             params[param_type] = copy.deepcopy(from_node.params[param_type]) 
 
             for key, value in from_node.params[param_type].items():
+                if (random.randint(0, FREQ_CLEAR_PARAM) == 0):
+                    value = ""
+
                 (param, val) = self.per_param_mutators.mutator(key, value)
 
                 if param != key:
@@ -249,7 +256,6 @@ class Mutator:
                 [(param[],3), (param,4)] == $_[param] = str(4)
 
                 [(param[3],13), (param[2],14)] == $_[param] = [2 => 14, 3 => 13]
-
         """
         logger = logging.getLogger(__name__)
         logger.debug("Mutate fun alter type")
@@ -263,11 +269,14 @@ class Mutator:
             return param + '[]', val
 
     @staticmethod
-    def random_str(length):
-        return ''.join(random.choices(string.ascii_lowercase + 
-                                      string.ascii_uppercase + 
-                                      string.punctuation +
-                                      string.digits, k=length))
+    def random_str(length: int) -> str:
+        seq = random.choices([
+                              string.ascii_lowercase,
+                              string.ascii_uppercase, 
+                              string.punctuation,
+                              string.digits], weights=[10,10,50,30], k=1)[0]
+
+        return ''.join(random.choices(seq, k=length))
 
     @staticmethod
     def add_random_text(param:str, 
@@ -318,3 +327,13 @@ class Mutator:
             return (param, list(map(lambda x: payload + x, val)))
         else:
             return (param, list(map(lambda x: x + payload, val)))
+
+    def add_strxss_payload(self,
+                           param:str,
+                           val: List[str]) -> Tuple[str, List[str]]:
+        logger = logging.getLogger(__name__)
+        logger.debug("Mutate fun insert random str+xss")
+
+        (param2,val2) = self.add_xss_payload(param, val)
+
+        return Mutator.add_random_text(param2, val2)

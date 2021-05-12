@@ -11,9 +11,8 @@ menu = ["Automated Fuzzing", "Manual Fuzzing", "Exit"]
 
 class Curses_menu:
 
-    def __init__(self, fuzzer_object):
-      self.fuzzer = fuzzer_object
-
+    def __init__(self):
+        pass
     async def automated_fuzzing(self, stdscr):
         start = time.time()
         # Clear window
@@ -257,6 +256,11 @@ class Curses_menu:
             key = 0
             stdscr.refresh()
 
+
+    
+    async def run(self, fuzzer_object):
+        self.fuzzer = fuzzer_object
+        await curses.wrapper(self.draw_menu)
 
     async def draw_menu(self, stdscr):
         # turn off cursor blinking

