@@ -6,7 +6,7 @@
      ] 
    },
     "require": {
-      "nikic/php-parser": "4.*",
+      "nikic/php-parser": "4.15.4",
       "myclabs/php-enum": "^1.7"
     }
 }

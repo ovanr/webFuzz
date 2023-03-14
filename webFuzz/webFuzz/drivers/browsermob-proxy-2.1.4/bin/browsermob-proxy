@@ -9,8 +9,6 @@ then
     JAVACMD="java"
 fi
 
-export JAVA_OPTS="-Dbmp.allowNativeDnsFallback=true"
-
 "$JAVACMD" $JAVA_OPTS \
            -Dapp.name="browsermob-proxy" \
            -Dbasedir="$BASEDIR" \

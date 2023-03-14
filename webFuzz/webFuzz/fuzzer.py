@@ -7,10 +7,11 @@ import logging
 import random
 import signal
 
-from typing         import ContextManager, List, AsyncIterator, Dict
-from aiohttp.client import ClientSession, TraceConfig
-from urllib.parse   import urlparse
-from contextlib     import asynccontextmanager
+from typing          import ContextManager, List, AsyncIterator, Dict
+from aiohttp.client  import ClientSession
+from aiohttp.tracing import TraceConfig
+from urllib.parse    import urlparse
+from contextlib      import asynccontextmanager
 
 # User defined modules
 from .worker        import Worker

@@ -4,7 +4,7 @@ A grey-box fuzzer for web applications
 
 ## Installation
 
-1. Instrument your web application using [php-ast-instrumentor](https://github.com/ovanr/webFuzz/tree/v1.2.0/instrumentor/php).
+1. Instrument your web application using [php-ast-instrumentor](https://github.com/ovanr/webFuzz/tree/v1.2.1/instrumentor/php).
 2. Make sure your instrumented web application now works fine.
 4. Install the python dependencies:  ```pip3 install --upgrade -r web_fuzzer/requirements.txt```
 
