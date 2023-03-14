@@ -7,11 +7,11 @@ Only PHP web applications are supported.
 
 1. Instrument your web application using [ast-instrumentor](https://github.com/ovanr/webFuzz/tree/v1.2.1/instrumentor/).
 2. Make sure your instrumented web application now works fine.
-   Let <webapp-path> be that the path to the root of this web application.
-   Let <webapp-url> be the url to the index page of the web application.
+   Let `<webapp-path>` be that the path to the root of this web application.
+   Let `<webapp-url>` be the url to the index page of the web application.
 3. Install the python dependencies:  ```pip3 install --upgrade -r web_fuzzer/requirements.txt```
 4. Download the version of geckodriver that matches your browser version.
-   Let <gecko-path> be that the path to this driver in the rest of the document.
+   Let `<gecko-path>` be that the path to this driver in the rest of the document.
 
 ## Environment
 
