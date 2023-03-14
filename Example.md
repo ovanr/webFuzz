@@ -1,9 +1,9 @@
 ## Running Fuzzing Example with WordPress 6.1.1
 
 In this document let:
-- <wordpress-path> be the path to the wordpress root folder 
-- <wordpress-url> be the url path to wordpress
-- <geckodriver> be the path to geckodriver file for your firefox browser
+- `<wordpress-path>` be the path to the wordpress root folder 
+- `<wordpress-url>` be the url path to wordpress
+- `<geckodriver>` be the path to geckodriver file for your firefox browser
 
 #### 1. Instrument project 
 
@@ -13,7 +13,7 @@ In this document let:
    php src/instrumentor.php --verbose --policy edge --method file --dir <wordpress-path>
 ```
 
-This should create a new folder named <wordpress-path>_instrumented.
+This should create a new folder named `<wordpress-path>_instrumented`.
 Change your http server configuration to point to _instrumented folder
 instead of the original wordpress folder and test that the webapp works.
 
@@ -78,5 +78,6 @@ instead of the original wordpress folder and test that the webapp works.
      Navigate to the entrypoint URL (http://localhost/wp-admin/index.php in this case), 
      and find a phrase in the html document that only appears if the user is logged in.
    
-   + The -s flag opens a browser window for you to log-in the web app. As soon as you
-     close the browser window, webFuzz will get the session cookies from the browser
+   + The -s flag opens a browser window for you to log-in the web app. 
+     When you are finished with logging-in, close the browser window.
+     webFuzz will get the session cookies from the browser.
