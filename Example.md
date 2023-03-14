@@ -1,25 +1,34 @@
-## Running Fuzzing Example with WordPress 5.6
+## Running Fuzzing Example with WordPress 6.1.1
+
+In this document let:
+- <wordpress-path> be the path to the wordpress root folder 
+- <wordpress-url> be the url path to wordpress
+- <geckodriver> be the path to geckodriver file for your firefox browser
 
 #### 1. Instrument project 
 
 
 ```bash
-   cd instrumentor/php/src
-   php7.4 instrumentor.php --verbose --policy edge --method file --dir ~/webapps/WordPress
+   cd instrumentor
+   php src/instrumentor.php --verbose --policy edge --method file --dir <wordpress-path>
 ```
-   
+
+This should create a new folder named <wordpress-path>_instrumented.
+Change your http server configuration to point to _instrumented folder
+instead of the original wordpress folder and test that the webapp works.
+
 #### 2. Run the proxy to get JavaScript generated URLs
 
 
 ```bash
    cd webFuzz
-   python3.8 webFuzz.py -w 8 
-                        --meta ~/webapps/WordPress_instrumented/instr.meta 
-                        --driver webFuzz/drivers/geckodriver 
-                        -vv 
-                        -p
-                        -r simple 
-                        'http://localhost/wp-admin/index.php' 
+   python3 webFuzz.py -w 8 
+                      --meta <wordpress-path>_instrumented/instr.meta 
+                      --driver <geckodriver>
+                      -vv 
+                      -p
+                      -r simple 
+                      <wordpress-url>/wp-admin/index.php
 ```
    
    + When the browser window starts, exercise as much of the functionality
@@ -34,18 +43,18 @@
 
 ```bash
    cd webFuzz
-   python3.8 webFuzz.py --ignore_4xx 
-                        -w 8 
-                        --meta ~/webapps/WordPress_instrumented/instr.meta 
-                        --driver webFuzz/drivers/geckodriver 
-                        -b 'wp-login.php|action|logout|*' 
-                        -vv
-                        --request_timeout 100 
-                        --seed_file SEED_FILE 
-                        -s 
-                        --catch_phrase 'Howdy'
-                        -r simple 
-                        'http://localhost/wp-admin/index.php'
+   python webFuzz.py --ignore_4xx 
+                     -w 8 
+                     --meta <wordpress-path>_instrumented/instr.meta 
+                     --driver <geckodriver>
+                     -b 'wp-login.php|action|logout|*' 
+                     -vv
+                     --request_timeout 100 
+                     --seed_file SEED_FILE 
+                     -s 
+                     --catch_phrase 'Howdy'
+                     -r simple 
+                     <wordpress-url>/wp-admin/index.php
 ```
    
    + If step 2 was completed successfully a new seed file (in `./seeds` directory) should have been created.

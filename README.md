@@ -1,29 +1,41 @@
 # webFuzz
 
-A grey-box fuzzer for web applications
+A grey-box fuzzer for web applications.
+Only PHP web applications are supported.
 
 ## Installation
 
-1. Instrument your web application using [php-ast-instrumentor](https://github.com/ovanr/webFuzz/tree/v1.2.1/instrumentor/php).
+1. Instrument your web application using [ast-instrumentor](https://github.com/ovanr/webFuzz/tree/v1.2.1/instrumentor/).
 2. Make sure your instrumented web application now works fine.
-4. Install the python dependencies:  ```pip3 install --upgrade -r web_fuzzer/requirements.txt```
+   Let <webapp-path> be that the path to the root of this web application.
+   Let <webapp-url> be the url to the index page of the web application.
+3. Install the python dependencies:  ```pip3 install --upgrade -r web_fuzzer/requirements.txt```
+4. Download the version of geckodriver that matches your browser version.
+   Let <gecko-path> be that the path to this driver in the rest of the document.
+
+## Environment
+
+Please use the following versions to make sure webFuzz works:
+
+- Python version 3.10
+- Firefox browser (not chromium)
+- Java version 9 or 11 (due to browsermob-proxy dependency) 
 
 ## Usage
 
 Run the fuzzer using `webFuzz.py`.
-*Tested on Linux environments with Python version 3.8 and 3.9*
 
 Example run: 
 ```
 ./webFuzz.py -vv 
-             --driver webFuzz/drivers/geckodriver 
-             -m ~/MyWebappInstrumented/instr.meta 
+             --driver <gecko-path>
+             -m <webapp-path>/instr.meta 
              -w 8 
              -b 'wp-login|action|logout|' 
              -b 'settings|||POST 
              -p -s 
              -r simple 
-             'http://localhost/wp-admin/index.php'
+             <webapp-url>
 ```
 
 ## Paper
@@ -50,7 +62,7 @@ A paper that discusses the internals of webFuzz can be found at:
 
 ## Authors
 
-* **Orpheas van Rooij** - *ovan-r01@cs.ucy.ac.cy*
+* **Orpheas van Rooij** - *orpheas.vanrooij@outlook.com*
 * **Marcos Antonios Charalambous** - *mchara01@cs.ucy.ac.cy*
 * **Demetris Kaizer** - *dkaize01@cs.ucy.ac.cy*
 * **Michalis Papaevripides** - *mpapae04@cs.ucy.ac.cy*
