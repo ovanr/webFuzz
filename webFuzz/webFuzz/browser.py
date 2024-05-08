@@ -3,8 +3,9 @@ from __future__                 import annotations
 from urllib.parse               import urlparse
 from browsermobproxy            import Server, Client
 from selenium                   import webdriver
-from selenium.webdriver         import Firefox, FirefoxProfile, Proxy, FirefoxOptions
+from selenium.webdriver         import Firefox, Proxy, FirefoxOptions
 from selenium.common.exceptions import WebDriverException, UnexpectedAlertPresentException
+from selenium.webdriver.chrome.service import Service
 from haralyzer                  import HarParser
 from pathlib                    import Path
 from time                       import sleep
@@ -67,16 +68,18 @@ class Browser():
 
         with self._proxy.proxy_session() as client:
             selenium_proxy: Proxy = client.selenium_proxy()
-            profile: FirefoxProfile = FirefoxProfile()
-            profile.set_proxy(selenium_proxy)
-
             options = FirefoxOptions()
             # allow proxing via the localhost
-            options.preferences["network.proxy.allow_hijacking_localhost"] = True
 
-            driver: Firefox = webdriver.Firefox(firefox_profile=profile, 
-                                                firefox_options=options, 
-                                                executable_path=self.driver_loc)
+            options.set_preference("network.proxy.allow_hijacking_localhost", True)
+            options.set_preference("network.proxy.type", 1)
+            options.set_preference("network.proxy.http", selenium_proxy.httpProxy.split(':')[0])
+            options.set_preference("network.proxy.http_port", int(selenium_proxy.httpProxy.split(':')[1]))
+            options.set_preference("network.proxy.ssl", selenium_proxy.sslProxy.split(':')[0])
+            options.set_preference("network.proxy.ssl_port", int(selenium_proxy.sslProxy.split(':')[1]))
+
+            serviceDriver = Service(executable_path=self.driver_loc)
+            driver: Firefox = webdriver.Firefox(options=options, service=serviceDriver)
             try:
                 driver.get(start_url)
                 yield ProxiedFirefox(browser=driver, proxy=client)

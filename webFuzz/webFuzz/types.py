@@ -126,6 +126,10 @@ class Arguments(Tap):
     worker: int = 1
     """Specify the number of workers to spawn that will concurrently send requests"""
 
+    crawler_per_base_limit: int = 2000
+    """ Crawler checks if the base url of the new request did not surpass this limit.
+        This is a simple way to stop urls with nonce parameter to be constantly sent"""
+
     uniq_frag: bool = False
     """Treat urls with different fragments as different urls"""
 

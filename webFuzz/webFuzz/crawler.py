@@ -8,7 +8,6 @@ from .types     import HTTPMethod, BlockRule, List
 from .misc      import get_logger
 from .node      import Node
 
-CRAWLER_PER_BASE_LIMIT = 2000
 
 Hash = int
 Url = str
@@ -16,11 +15,13 @@ BaseURLCounter = Dict[HTTPMethod, Dict[Url, int]]
 
 class Crawler:
     def __init__(self, 
+                 per_base_limit: int,
                  init_seed: Optional[Set[Node]] = None,
                  seed_file: Optional[str] = None,
                  block_rules: List[BlockRule] = []):
 
         self._crawler_unseen: Set[Node] = set()
+        self.per_base_limit = per_base_limit
 
         if init_seed:
             self._crawler_unseen.update(init_seed)
@@ -170,7 +171,7 @@ class Crawler:
     """
         Check if the base url of the new request did not surpass the limit.
         Each base url (without the query,fragment string) is only allowed to be sent
-        in total CRAWLER_PER_BASE_LIMIT number of times. This is a simple
+        in total self.per_base_limit number of times. This is a simple
         way to stop urls with nonce parameter to be constantly sent
 
         :param new_request: the request that we want to check
@@ -188,10 +189,10 @@ class Crawler:
             return True
         else:
             base_dict[new_request.url] += 1
-            if base_dict[new_request.url] == CRAWLER_PER_BASE_LIMIT:
+            if base_dict[new_request.url] == self.per_base_limit:
                 logger.warning("Base URL %s added to blocklist", new_request.url)
             
-            if base_dict[new_request.url] >= CRAWLER_PER_BASE_LIMIT:
+            if base_dict[new_request.url] >= self.per_base_limit:
                 return False
 
         return True

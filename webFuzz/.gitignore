@@ -1,6 +1,10 @@
 __pycache__
 **/*.log
 **/*.meta
+**/lib
+**/bin
+**/lib64
+**/pyvenv.cfg
 seeds/*.json
 tools/*.json
 tools/*.html

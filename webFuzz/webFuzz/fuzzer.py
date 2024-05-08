@@ -73,6 +73,7 @@ class Fuzzer:
 
         self._crawler = Crawler(block_rules=args.block,
                                 init_seed=initial_seed,
+                                per_base_limit=args.crawler_per_base_limit,
                                 seed_file=args.seed_file)
 
         self._node_iterator = NodeIterator()
