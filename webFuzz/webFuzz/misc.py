@@ -7,8 +7,9 @@ from typing           import Callable, Iterator, Any, Dict, List, Tuple
 from difflib          import SequenceMatcher
 from urllib.parse     import parse_qs
 from math             import log2, ceil
-from aiohttp.client   import ClientSession, TraceConfig
-from aiohttp.typedefs import CIMultiDictProxy
+from aiohttp.client   import ClientSession
+from aiohttp.tracing  import TraceConfig
+from multidict        import CIMultiDictProxy
 from os               import path, access, R_OK
 from functools        import partial
 

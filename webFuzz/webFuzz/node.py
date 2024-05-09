@@ -7,7 +7,7 @@ import jsonpickle
 
 from typing           import Dict, Any, Union, Optional
 from urllib.parse     import ParseResult, urlparse, urlunparse, urlencode
-from aiohttp.typedefs import CIMultiDictProxy
+from multidict        import CIMultiDictProxy
 
 
 from .environment     import env
@@ -34,7 +34,7 @@ UNCERTAINTY_THRESH = 0.10
 
 class Node:
     def __init__(self,
-                 url: Union[str|UrlType],
+                 url: Union[str,UrlType],
                  method: HTTPMethod,
                  params: Optional[Params] = None,
                  parent_request: Optional[Node] = None,
@@ -291,7 +291,7 @@ class Node:
     def __gt__(self, node2: Node) -> bool:
         return self.__cmp__(node2) > 0
 
-    def __eq__(self, node2: Node) -> bool:
+    def __eq__(self, node2: object) -> bool:
         """
             Compare if equal. (Needed in order for Node to be part of a Set)
             Uses their hash.

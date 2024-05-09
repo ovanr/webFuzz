@@ -87,7 +87,8 @@ class Fuzzer:
         self.stats = Statistics(start_node)
 
     @asynccontextmanager
-    async def http_session(cookies: Dict[str, str],
+    async def http_session(self,
+                           cookies: Dict[str, str],
                            headers: Dict[str, str],
                            conn_count: int) -> AsyncIterator[ClientSession]:
         logger = get_logger(__name__)
@@ -116,9 +117,9 @@ class Fuzzer:
 
             self.http_cookies = result.cookies
 
-        async with Fuzzer.http_session(self.http_cookies, 
-                                       self.http_headers, 
-                                       self.worker_count) as s:
+        async with self.http_session(self.http_cookies, 
+                                     self.http_headers, 
+                                     self.worker_count) as s:
 
             logger.info("Spawning %d workers", self.worker_count)
 

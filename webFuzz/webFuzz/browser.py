@@ -1,22 +1,22 @@
-from __future__                 import annotations 
+from __future__                         import annotations 
 
-from urllib.parse               import urlparse
-from browsermobproxy            import Server, Client
-from selenium                   import webdriver
-from selenium.webdriver         import Firefox, Proxy, FirefoxOptions
-from selenium.common.exceptions import WebDriverException, UnexpectedAlertPresentException
-from selenium.webdriver.chrome.service import Service
-from haralyzer                  import HarParser
-from pathlib                    import Path
-from time                       import sleep
-from typing                     import NamedTuple, Set, Dict, List, Iterator
-from contextlib                 import contextmanager
+from urllib.parse                       import urlparse
+from browsermobproxy                    import Server, Client
+from selenium                           import webdriver
+from selenium.webdriver                 import Firefox, Proxy, FirefoxOptions
+from selenium.common.exceptions         import WebDriverException, UnexpectedAlertPresentException
+from selenium.webdriver.firefox.service import Service
+from haralyzer                          import HarParser
+from pathlib                            import Path
+from time                               import sleep
+from typing                             import NamedTuple, Set, Dict, List, Iterator, Generator
+from contextlib                         import contextmanager
 
 import psutil
 
-from .node                      import Node
-from .types                     import HTTPMethod
-from .parser                    import Parser
+from .node                              import Node
+from .types                             import HTTPMethod
+from .parser                            import Parser
 
 __BMP__ = str(Path(__file__).parent.absolute()) + '/drivers/browsermob-proxy-2.1.4/bin/browsermob-proxy'
 
@@ -43,7 +43,7 @@ class ProxyServer():
                     break
 
     @contextmanager
-    def proxy_session(self) -> Client:
+    def proxy_session(self) -> Iterator[Client]:
         ProxyServer.killall_proxies()
         self._server.start()
 
