@@ -17,8 +17,9 @@ Only PHP web applications are supported.
 
 Please use the following versions to make sure webFuzz works:
 
-- Python version 3.10
-- Firefox browser (not chromium)
+- Linux OS (Tested on Arch Linux)
+- Python version 3 (Tested on 3.12)
+- Firefox browser (Tested on 125.0.3)
 - Java version 9 or 11 (due to browsermob-proxy dependency) 
 
 ## Usage
@@ -29,7 +30,7 @@ Example run:
 ```
 ./webFuzz.py -vv 
              --driver <gecko-path>
-             -m <webapp-path>/instr.meta 
+             -m <webapp-path>/instr.meta
              -w 8 
              -b 'wp-login|action|logout|' 
              -b 'settings|||POST 
