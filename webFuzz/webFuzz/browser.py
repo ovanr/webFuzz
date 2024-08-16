@@ -71,12 +71,17 @@ class Browser():
             options = FirefoxOptions()
             # allow proxing via the localhost
 
+            http_addr = selenium_proxy.httpProxy.split(':')[0]
+            http_port = int(selenium_proxy.httpProxy.split(':')[1])
+            ssl_addr = selenium_proxy.sslProxy.split(':')[0]
+            ssl_port = int(selenium_proxy.sslProxy.split(':')[1])
+
             options.set_preference("network.proxy.allow_hijacking_localhost", True)
             options.set_preference("network.proxy.type", 1)
-            options.set_preference("network.proxy.http", selenium_proxy.httpProxy.split(':')[0])
-            options.set_preference("network.proxy.http_port", int(selenium_proxy.httpProxy.split(':')[1]))
-            options.set_preference("network.proxy.ssl", selenium_proxy.sslProxy.split(':')[0])
-            options.set_preference("network.proxy.ssl_port", int(selenium_proxy.sslProxy.split(':')[1]))
+            options.set_preference("network.proxy.http", http_addr)
+            options.set_preference("network.proxy.http_port", http_port)
+            options.set_preference("network.proxy.ssl", ssl_addr)
+            options.set_preference("network.proxy.ssl_port", ssl_port)
 
             serviceDriver = Service(executable_path=self.driver_loc)
             driver: Firefox = webdriver.Firefox(options=options, service=serviceDriver)
